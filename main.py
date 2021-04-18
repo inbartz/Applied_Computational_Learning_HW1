@@ -1,3 +1,5 @@
+import sys
+
 import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
@@ -17,13 +19,15 @@ Not_blood_related = ['ï»¿Patient ID', 'Patient age quantile',
                       'Bordetella pertussis', 'Metapneumovirus',
                       'Parainfluenza 2', 'Influenza B, rapid test',
                       'Influenza A, rapid test']
-path = "C:\\Users\\inbar\\Desktop\\LearningHW1\\"
+# path = "C:\\Users\\inbar\\Desktop\\LearningHW1\\"
 Required_features = ['Lactic Dehydrogenase', 'Aspartate transaminase', 'Alanine transaminase']
 target_col_name = 'SARS-Cov-2 exam result'
+
 
 def read_data(path):
     data = pd.read_csv(path + "dataset.csv", encoding='latin-1')
     return data
+
 
 def choose_features(data, features_to_drop, Required_features):
     # Droop all the features that are not related to blood
@@ -38,16 +42,19 @@ def choose_features(data, features_to_drop, Required_features):
     data.dropna(thresh=2, inplace=True)
     return data
 
+
 def get_target_values(data , target_col_name):
     target_values = data[target_col_name]
     target_values = target_values.replace({'negative': 0, 'positive': 1})
     return target_values.to_frame()
+
 
 def data_pre_process(data, features_to_drop, Required_features, target_col_name):
     clean_data = choose_features(data, features_to_drop, Required_features)
     target_values = get_target_values(clean_data, target_col_name)
     clean_data.drop(target_col_name, axis='columns', inplace=True)
     return clean_data, target_values
+
 
 def fill_none_values(data, initial_strategy):
     new_data = pd.DataFrame(data)
@@ -59,8 +66,8 @@ def fill_none_values(data, initial_strategy):
     return df_data
 
 
-
 if __name__ == '__main__':
+    path = sys.argv[1]
     # read data from csv file
     all_data = read_data(path)
     # preform pre-process includes:
