@@ -4,7 +4,9 @@ import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.model_selection import KFold, train_test_split
+from sklearn.metrics import confusion_matrix
+
 
 # Variables
 Not_blood_related = ['ï»¿Patient ID', 'Patient age quantile',
@@ -58,6 +60,20 @@ def data_pre_process(data, features_to_drop, Required_features, target_col_name)
     return clean_data, target_values
 
 
+def random_forest_classification(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    cv = KFold(n_splits=10, n_repeats=5, random_state=1)
+    model = RandomForestClassifier(n_estimators=10)
+    model.fit(X_train, y_train)
+    accuracy = model.score(X_train, y_test)
+    print("RF accuracy model: " + str(accuracy))
+
+    # confusion matrix - distribution of errors
+    y_predicted = model.predict(X_test)
+    cm = confusion_matrix(y_test, y_predicted)
+
+
+
 def fill_none_values(data, initial_strategy):
     new_data = pd.DataFrame(data)
     #imputer = IterativeImputer(random_state=0,  initial_strategy=initial_strategy)
@@ -66,11 +82,6 @@ def fill_none_values(data, initial_strategy):
     data_without_null = imputer.transform(new_data)
     df_data = pd.DataFrame(data_without_null, columns=data.columns)
     return df_data
-
-
-def random_forest_classification(X, y):
-    model = RandomForestClassifier()
-    cv = RepeatedStratifiedKFold(n_splits=10, n_repeats=5, random_state=1)
 
 
 if __name__ == '__main__':
