@@ -3,6 +3,9 @@ import sys
 import pandas as pd
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
+import numpy as np
+import matplotlib.pyplot as plt
+
 
 # Variables
 Not_blood_related = ['ï»¿Patient ID', 'Patient age quantile',
@@ -27,6 +30,31 @@ target_col_name = 'SARS-Cov-2 exam result'
 def read_data(path):
     data = pd.read_csv(path + "dataset.csv", encoding='latin-1')
     return data
+
+
+def correlation(feature_name1, feature_name2, feature_array1, feature_array2):
+    arr1 = np.zeros(len(feature_array1))
+    arr2 = np.zeros(len(feature_array2))
+    for index in range(len(feature_array1)):
+        if feature_array1[index] is not None and feature_array2[index] is not None:
+            arr1[index] = feature_array1[index]
+            arr2[index] = feature_array2[index]
+    if len(arr1) == len(arr2):
+        print(np.corrcoef(arr1, arr2))
+        plt.scatter(arr1, arr2)
+        plt.title('A plot to show the correlation between {0} and {1}'.format(feature_name1, feature_name2))
+        plt.xlabel(feature_name1)
+        plt.ylabel(feature_name2)
+        plt.plot(np.unique(arr1), np.poly1d(np.polyfit(arr1, arr2, 1))(np.unique(arr1)), color='yellow')
+        plt.show()
+
+
+def check_for_correlations(data):
+    for index_first in range(data.shape[1]-1):
+        for index_second in range(index_first+1, data.shape[1]):
+            print("1: "+str(data.columns[index_first])+" 2: "+str(data.columns[index_second]))
+            correlation(data.columns[index_first], data.columns[index_second],
+                        data.iloc[: , index_first].values, data.iloc[: , index_second].values)
 
 
 def choose_features(data, features_to_drop, Required_features):
@@ -85,4 +113,6 @@ if __name__ == '__main__':
     # print("This is X with median values - features and values: " + str(X_median_insteadof_none))
     X = fill_none_values(X, '')
     print("This is X without none values - features and values: "+str(X))
+    check_for_correlations(X)
+
 
