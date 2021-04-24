@@ -246,6 +246,15 @@ def LightGBM(X, Y):
     show_model_evaluation(evaluation_params, "LightGBM")
     return best_model
 
+def addFeatures(X):
+    new_X = X.copy()
+    new_X['Hematocrit_Platelets'] = new_X['Hematocrit'].astype(float)+(new_X['Platelets'].astype(float)/2)
+    new_X['Leukocytes_Lymphocytes'] = (-1*new_X['Leukocytes'].astype(float))/new_X['Lymphocytes'].astype(float)
+    new_X['Hemoglobin_Red blood Cells'] = new_X['Hemoglobin'].astype(float)+new_X['Red blood Cells'].astype(float)
+    new_X['Neutrophils_Lymphocytes'] = abs(new_X['Neutrophils'].astype(float)*new_X['Lymphocytes'].astype(float))
+    new_X['Urea_Creatinine'] = new_X['Urea'].astype(float)/new_X['Creatinine'].astype(float)
+    return new_X
+
 
 if __name__ == '__main__':
     path = sys.argv[1]
@@ -257,7 +266,10 @@ if __name__ == '__main__':
     rf_model = random_forest_best_model(X, Y)
     XGBoost_best = XGBoost_model(X, Y)
     # create new data with 5 new features
-
+    new_X = addFeatures(X)
+    new_lr_model = logistic_regression_model(new_X, Y)
+    new_rf_model = random_forest_best_model(new_X, Y)
+    new_XGBoost_best = XGBoost_model(new_X, Y)
     cb_model = CatBoost_model(X, Y)
     lGBM_model = LightGBM(X, Y)
     #print("the best model = " + str(lr_model))
