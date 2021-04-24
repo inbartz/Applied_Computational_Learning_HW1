@@ -308,7 +308,7 @@ if __name__ == '__main__':
     # cat_model=CatBoostClassifier(iterations=5, learning_rate=0.1)
     # cat_model=train_the_model(X, y, cat_model, 'cat')
     # run_shap_one_dimension(cat_model, X_df)
-    # LightGBM
-    lgb_model=lgb.LGBMClassifier()
-    lgb_model=train_the_model(X, y, lgb_model, 'lgb')
-    run_shap_two_dimension(lgb_model, X_df)
+    # # LightGBM
+    # lgb_model=lgb.LGBMClassifier()
+    # lgb_model=train_the_model(X, y, lgb_model, 'lgb')
+    # run_shap_two_dimension(lgb_model, X_df)

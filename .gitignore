@@ -2,3 +2,7 @@ venv
 .idea
 dataset.csv
 .DS_Store
+.catboost_info/catboost_training.json
+.catboost_info/learn/events.out.tfevents
+.catboost_info/learn_error.tsv
+.test.py
