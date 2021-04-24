@@ -68,6 +68,7 @@ def correlation(feature_name1, feature_name2, feature_array1, feature_array2):
 
 
 def check_for_correlations(data):
+    data = pd.DataFrame(fill_none_values(data), columns=data.columns)
     for index_first in range(data.shape[1]-1):
         for index_second in range(index_first+1, data.shape[1]):
             print("1: "+str(data.columns[index_first])+" 2: "+str(data.columns[index_second]))
@@ -114,8 +115,9 @@ def fill_none_values(data):
 def fill_nones(X_train, X_test):
     imputer = IterativeImputer(random_state=0)
     X_train = imputer.fit_transform(X_train)
-    X_test = imputer.transform((X_test))
+    X_test = imputer.transform(X_test)
     return X_train, X_test
+
 
 def train_and_evaluate(X, Y, model, grid_variables):
     f1_max_score = 0
@@ -244,15 +246,18 @@ def LightGBM(X, Y):
     show_model_evaluation(evaluation_params, "LightGBM")
     return best_model
 
+
 if __name__ == '__main__':
     path = sys.argv[1]
     # read data from csv file
     all_data = read_data(path)
     X, Y = data_pre_process(all_data, Not_blood_related, Required_features, target_col_name)
-    check_for_correlations(X)
+    # check_for_correlations(X)
     lr_model = logistic_regression_model(X, Y)
     rf_model = random_forest_best_model(X, Y)
     XGBoost_best = XGBoost_model(X, Y)
     cb_model = CatBoost_model(X, Y)
     lGBM_model = LightGBM(X, Y)
     #print("the best model = " + str(lr_model))
+    # create new data with 5 new features
+
