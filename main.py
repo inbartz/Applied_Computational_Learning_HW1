@@ -256,8 +256,10 @@ if __name__ == '__main__':
     lr_model = logistic_regression_model(X, Y)
     rf_model = random_forest_best_model(X, Y)
     XGBoost_best = XGBoost_model(X, Y)
+    # create new data with 5 new features
+
     cb_model = CatBoost_model(X, Y)
     lGBM_model = LightGBM(X, Y)
     #print("the best model = " + str(lr_model))
-    # create new data with 5 new features
+
 
