@@ -2,6 +2,7 @@ import sys
 import os
 import numpy as np
 import pandas as pd
+import shap
 from catboost import CatBoostClassifier
 from numpy.core import mean, std
 from scipy.sparse import isspmatrix_csc
@@ -43,7 +44,7 @@ n_estimators = [10, 20, 30] + [i for i in range(45, 105, 5)]
 max_depth = [2, 4, 8, 16, 32, 64]
 # XGBoost params
 learning_rate = [0.1, 0.05, 0.01]
-
+num_of_generalization_round = 10
 
 
 def read_data(path):
@@ -89,8 +90,9 @@ def fill_none_values(data):
 def fill_nones(X_train, X_test):
     imputer = IterativeImputer(random_state=0)
     X_train = imputer.fit_transform(X_train)
-    X_test = imputer.transform((X_test))
+    X_test = imputer.transform(X_test)
     return X_train, X_test
+
 
 def train_and_evaluate(X, Y, model, grid_variables):
     f1_max_score = 0
@@ -125,6 +127,7 @@ def train_and_evaluate(X, Y, model, grid_variables):
         print(f1_model_score)
     return final_model
 
+
 def evaluated_by_confusion_matrix(Y_test, yhat):
     matrix = confusion_matrix(Y_test, yhat)
     tn = matrix[0][0]
@@ -141,7 +144,8 @@ def show_model_evaluation(list, model_name):
     print('Specificity: %.3f (%.3f)' % (mean(list[3]), std(list[3])))
     print('AUROC: %.3f (%.3f)' % (mean(list[4]), std(list[4])))
 
-def run_and_train_model(X, Y, model, num_of_runs):
+
+def run_and_train_model(X, Y, model):
     # evaluation parameters
     accuracy_list = []
     f1_scores_list = []
@@ -151,10 +155,11 @@ def run_and_train_model(X, Y, model, num_of_runs):
     final_model = None
     f1_max_score = 0
     random_states = list(range(10, 101, 10))
-    for index in range(num_of_runs):
+    svm_smote = SVMSMOTE(random_state=12, k_neighbors=k_neighbors)
+    random_states = list(range(10, 101, 10))
+    for index in range(num_of_generalization_round):
         X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=random_states[index])
         X_train, X_test = fill_nones(X_train, X_test)
-        svm_smote = SVMSMOTE(random_state=12, k_neighbors=k_neighbors)
         X_train, Y_train = svm_smote.fit_resample(X_train, Y_train)
         model.fit(X_train, Y_train)
         yhat = model.predict(X_test)
@@ -183,7 +188,7 @@ def logistic_regression_model(X, Y):
     model = LogisticRegression(random_state=random_seed)
     grid = {}
     best_model = train_and_evaluate(X, Y, model, grid)
-    best_model, evaluation_params = run_and_train_model(X, Y, best_model, 10)
+    best_model, evaluation_params = run_and_train_model(X, Y, best_model)
     show_model_evaluation(evaluation_params, "LogisticRegression")
     return best_model
 
@@ -193,7 +198,7 @@ def random_forest_best_model(X, Y):
     grid = {'n_estimators': n_estimators,
             'max_depth': max_depth}
     best_model = train_and_evaluate(X, Y, model, grid)
-    best_model, evaluation_params = run_and_train_model(X, Y, best_model, 10)
+    best_model, evaluation_params = run_and_train_model(X, Y, best_model)
     show_model_evaluation(evaluation_params, "RF")
     return best_model
 
@@ -203,21 +208,31 @@ def XGBoost_model(X, Y):
             'max_depth': max_depth,
             'learning_rate': learning_rate}
     best_model = train_and_evaluate(X, Y, model, grid)
-    best_model, evaluation_params = run_and_train_model(X, Y, best_model, 10)
+    best_model, evaluation_params = run_and_train_model(X, Y, best_model)
     show_model_evaluation(evaluation_params, "XGBoost")
     return best_model
 
 def CatBoost_model(X, Y):
     model = CatBoostClassifier(iterations=5, learning_rate=0.1)
-    best_model, evaluation_params = run_and_train_model(X, Y, model, 10)
+    best_model, evaluation_params = run_and_train_model(X, Y, model)
     show_model_evaluation(evaluation_params, "CatBoost")
     return best_model
 
 def LightGBM(X, Y):
     model = lgb.LGBMClassifier()
-    best_model, evaluation_params = run_and_train_model(X, Y, model, 10)
+    best_model, evaluation_params = run_and_train_model(X, Y, model)
     show_model_evaluation(evaluation_params, "LightGBM")
     return best_model
+
+def shap_feature_importance(model, X_df, one_dimension):
+    explainer = shap.Explainer(model)
+    shap_values = explainer(X_df)
+    if not one_dimension:
+        shap_values.values = shap_values.values[:, :, 1]
+        shap_values.base_values = shap_values.base_values[:, 1]
+    shap.plots.beeswarm(shap_values, max_display=50)
+    shap.plots.bar(shap_values)
+
 
 if __name__ == '__main__':
     path = sys.argv[1]
@@ -229,4 +244,9 @@ if __name__ == '__main__':
     XGBoost_best = XGBoost_model(X, Y)
     cb_model = CatBoost_model(X, Y)
     lGBM_model = LightGBM(X, Y)
-    #print("the best model = " + str(lr_model))
+    # shap feature importance
+    X_no_none = fill_none_values(X)
+    shap_feature_importance(rf_model, X_no_none, False)
+    shap_feature_importance(XGBoost_best, X_no_none, True)
+    shap_feature_importance(cb_model, X_no_none, True)
+    shap_feature_importance(lGBM_model, X_no_none, False)
